@@ -1,6 +1,7 @@
 require 'card'
 
 class Hand
+  include Comparable
   attr_accessor :cards
   
   HANDS = [
@@ -9,6 +10,18 @@ class Hand
   
   def initialize(cards)
     @cards = cards
+    validate
+  end
+  
+  def validate
+    (0..4).each_with_index do |one, i|
+      (1..4).each_with_index do |two, j|
+        next if i == j
+        card_one = @cards[i]
+        card_two = @cards[j]
+        raise "Can't have two of the same card. #{card_one} and #{card_two}" if (card_one.rank == card_two.rank) and (card_one.suit == card_two.suit)
+      end
+    end
   end
   
   def hand
@@ -33,8 +46,85 @@ class Hand
     end
   end
   
+  def hand_name
+    HANDS[hand]
+  end
+  
+  def kickers
+    return buckets.select {|arr| arr.count == 1}.inject(&:+).sort.reverse unless buckets.select {|arr| arr.count == 1}.empty?
+    []
+  end
+  
+  def pairs
+    return buckets.select {|arr| arr.count == 2} unless buckets.select {|arr| arr.count == 2}.empty?
+    []
+  end
+  
+  def set
+    return buckets.select {|arr| arr.count == 3}.first unless buckets.select {|arr| arr.count == 3}.empty?
+    []
+  end
+
+  def quads
+    return buckets.select {|arr| arr.count == 4}.first unless buckets.select {|arr| arr.count == 4}.empty?
+    []
+  end
+  
+  def compare_kickers(other_kickers)
+    return compare(kickers, other_kickers)
+  end
+  
+  def compare(cards, other_cards)
+    (0..[other_cards.count-1, cards.count-1].min).to_a.each do |i|
+      comp =  cards[i] <=> other_cards[i]
+      return comp unless comp == 0
+    end
+    0
+  end
+  
+  def compare_equal(other)
+    case hand_name
+    when "nothing"
+      return compare_kickers(other.kickers)
+    when "pair", "two pair"
+      if compare(pairs.map {|p| p.first }, other.pairs.map {|p| p.first }) != 0
+        return compare(pairs.map {|p| p.first }, other.pairs.map {|p| p.first })
+      else
+        return compare_kickers(other.kickers)
+      end
+    when "set"
+      if compare(set, other.set) != 0
+        return compare(set, other.set)
+      else
+        return compare_kickers(other.kickers)
+      end
+    when "four of a kind"
+      if compare(quads, other.quads) != 0
+        return compare(quads, other.quads)
+      else
+        return compare_kickers(other.kickers)
+      end
+    when "full house"
+      if compare(set, other.set) != 0
+        return compare(set, other.set)
+      elsif compare(pairs.first, other.pairs.first) != 0
+        return compare(pairs.first, other.pairs.first)
+      else
+        return compare_kickers(other.kickers)
+      end
+    when "straight", "flush", "straight flush"
+      return compare_kickers(other.kickers)
+    end
+  end
+  
   def <=>(other)
-    hand <=> other.hand
+    if hand > other.hand
+      return 1
+    elsif hand < other.hand
+      return -1
+    else
+      return compare_equal(other)
+    end
   end
   
   private
@@ -47,19 +137,19 @@ class Hand
   end
   
   def pair?
-    not buckets.map(&:count).select {|x| x > 1}.empty?
+    buckets.map(&:count).select {|x| x > 1}.count == 1
   end
   
   def two_pair?
-    not buckets.map(&:count).select {|x| x > 1}.count > 1
+    buckets.map(&:count).select {|x| x > 1}.count == 2
   end
   
   def set?
-    not buckets.map(&:count).select {|x| x > 2}.empty?
+    buckets.map(&:count).select {|x| x == 3}.count == 1
   end
   
   def four_of_a_kind?
-    not buckets.map(&:count).select {|x| x > 3}.empty?
+    buckets.map(&:count).select {|x| x == 4}.count == 1
   end
   
   def straight?
@@ -77,7 +167,7 @@ class Hand
   end
   
   def full_house?
-    pair? and two_pair? and set?
+    two_pair? and set?
   end
   
   def straight_flush?

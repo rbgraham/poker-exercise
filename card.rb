@@ -1,4 +1,5 @@
 class Card
+  include Comparable
   RANKS = (2..14).to_a
   SUITS = ["Spades", "Clubs", "Hearts", "Diamonds"]
   
@@ -30,5 +31,19 @@ class Card
   
   def to_s
     return "#{RANK_NAMES[rank]} of #{suit}"
+  end
+  
+  def dup
+    return Card.new(rank, suit)
+  end
+  
+  def <=>(other)
+    if rank > other.rank
+      return 1
+    elsif rank < other.rank
+      return -1
+    else
+      return 0
+    end
   end
 end

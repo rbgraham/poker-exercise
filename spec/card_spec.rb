@@ -48,4 +48,17 @@ describe Card do
       card.suit.should == "Spades"
     end
   end
+  
+  describe "#<=>" do
+    it "should prefer X+1 to X" do
+      (2..13).to_a.each do |i|
+        Card.new(i, "Spades").should < Card.new(i+1, "Diamonds")
+      end
+    end
+    
+    it "should say equal ranks are equal" do
+      Card.new(2, "Spades").should == Card.new(2, "Diamonds")
+      Card.new(12, "Spades").should == Card.new(12, "Diamonds")
+    end
+  end
 end
