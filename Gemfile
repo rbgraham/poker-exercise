@@ -1,1 +1,2 @@
-require 'rspec-rails'
+source 'https://rubygems.org'
+gem 'rspec'
