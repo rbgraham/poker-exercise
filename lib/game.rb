@@ -1,5 +1,5 @@
+require_relative 'deck'
 require 'ostruct'
-require 'deck'
 
 class Game
   attr_reader :players

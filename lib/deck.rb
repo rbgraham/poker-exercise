@@ -1,4 +1,4 @@
-require "card"
+require_relative "card"
 require 'hand'
 
 class Deck
