@@ -64,64 +64,9 @@ class Hand
     []
   end
 
-  def compare_kickers(other_kickers)
-    return compare(kickers, other_kickers)
-  end
-
-  def compare(cards, other_cards)
-    (0..[other_cards.count-1, cards.count-1].min).to_a.each do |i|
-      comp =  cards[i] <=> other_cards[i]
-      return comp unless comp == 0
-    end
-    0
-  end
-
-  def compare_equal(other)
-    case hand_name
-    when "nothing"
-      return compare_kickers(other.kickers)
-    when "pair", "two pair"
-      if compare(pairs.map {|p| p.first }, other.pairs.map {|p| p.first }) != 0
-        return compare(pairs.map {|p| p.first }, other.pairs.map {|p| p.first })
-      else
-        return compare_kickers(other.kickers)
-      end
-    when "set"
-      if compare(set, other.set) != 0
-        return compare(set, other.set)
-      else
-        return compare_kickers(other.kickers)
-      end
-    when "four of a kind"
-      if compare(quads, other.quads) != 0
-        return compare(quads, other.quads)
-      else
-        return compare_kickers(other.kickers)
-      end
-    when "full house"
-      if compare(set, other.set) != 0
-        return compare(set, other.set)
-      elsif compare(pairs.first, other.pairs.first) != 0
-        return compare(pairs.first, other.pairs.first)
-      else
-        return compare_kickers(other.kickers)
-      end
-    when "straight", "flush", "straight flush"
-      return compare_kickers(other.kickers)
-    end
-  end
-
   def <=>(other)
-    if hand > other.hand
-      return 1
-    elsif hand < other.hand
-      return -1
-    else
-      return compare_equal(other)
-    end
   end
 
-  private
   def buckets
     (2..14).to_a.map do |x|
       @cards.select do |c|
