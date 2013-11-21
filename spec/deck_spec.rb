@@ -7,7 +7,6 @@ describe Deck do
     it "should mix up the cards" do
       cards = deck.cards.map(&:rank)
       deck.shuffle
-      deck.top.should == 0
       deck.cards.should_not == cards
     end
     
@@ -68,15 +67,13 @@ describe Deck do
       card.class.should == Card
     end
     
-    it "should increment top" do
-      top = deck.top
-      deck.draw
-      deck.top.should == top +1
+    it "should return the card on top of the deck" do
+      card = deck.cards.first
+      deck.draw.should == card
     end
     
-    it "should return the card on top of the deck" do
-      card = deck.cards[deck.top]
-      deck.draw.should == card
+    it "should raise an error if the deck is empty" do
+      expect { deck.deal(20, 20) }.to raise_error
     end
   end
 end

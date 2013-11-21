@@ -14,14 +14,7 @@ class Hand
   end
   
   def validate
-    (0..4).each_with_index do |one, i|
-      (1..4).each_with_index do |two, j|
-        next if i == j
-        card_one = @cards[i]
-        card_two = @cards[j]
-        raise "Can't have two of the same card. #{card_one} and #{card_two}" if (card_one.rank == card_two.rank) and (card_one.suit == card_two.suit)
-      end
-    end
+    raise "You cannot have identical cards in the hand" if cards.collect(&:to_s).uniq.length < cards.collect(&:to_s).length
   end
   
   def hand
