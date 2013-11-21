@@ -3,7 +3,6 @@ require 'hand'
 
 class Deck
   attr_accessor :cards
-  attr_reader :top
 
   def initialize
     setup
@@ -17,14 +16,15 @@ class Deck
         cards.push(Card.new(r, s))
       end
     end
+    
+    shuffle
   end
 
   def shuffle
-    @cards.shuffle!
+    @cards.shuffle!(random: Random.new(1_000_000))
   end
 
   def deal(cards, players)
-    shuffle
     hands = (1..players).to_a.map {|p| (1..cards).to_a.map {|c| draw } }
     hands.map {|h| Hand.new(h) }
   end
