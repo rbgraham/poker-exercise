@@ -22,9 +22,6 @@ class Card
   attr_accessor :rank, :suit
 
   def initialize(rank, suit)
-    raise "No such rank: #{rank}" unless RANKS.include?(rank)
-    raise "No such suit: #{suit}" unless SUITS.include?(suit)
-
     @rank = rank
     @suit = suit
   end
@@ -42,12 +39,5 @@ class Card
   end
 
   def <=>(other)
-    if rank > other.rank
-      return 1
-    elsif rank < other.rank
-      return -1
-    else
-      return 0
-    end
   end
 end

@@ -1,9 +1,13 @@
-Problem 3
-=========
+Interview Question 1
+====================
 
-Implement game.
+Run the rspec tests with:
+
+    rspec -I. spec/interview_question_1.rb
+
+Four of the tests are failing. Based on the test specification, please implement the missing behavior.
 
 Desired Outcome
 ---------------
 
-Running game should ask the user how many players (between 2 and 6). It should then deal out 7 cards to each player. It will then calculate the best 5-card hand for each player and declare a winner! Bonus for tests.
+All tests pass ("go green").
