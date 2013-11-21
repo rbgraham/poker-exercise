@@ -1,4 +1,4 @@
-require_relative 'deck'
+require 'deck'
 require 'ostruct'
 
 class Game
