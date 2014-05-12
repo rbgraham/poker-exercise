@@ -21,7 +21,7 @@ class Deck
   end
 
   def shuffle
-    @cards.shuffle!(random: Random.new(1_000_000))
+    @cards.shuffle!(random: Random.new(Time.now.to_i))
   end
 
   def deal(cards, players)

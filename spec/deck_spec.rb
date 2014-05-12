@@ -36,16 +36,16 @@ describe Deck do
         deck.cards.select {|c| c.rank == rank }.count.should == 4
       end
     end
+    
+    it "should call shuffle" do
+      Deck.any_instance.should_receive(:shuffle)
+      Deck.new
+    end
   end
 
   describe "#deal" do
     before do
       @hands = deck.deal(5, 3)
-    end
-
-    it "should call shuffle" do
-      deck.should_receive(:shuffle)
-      deck.deal(5, 3)
     end
 
     it "should return the right number of Hands" do

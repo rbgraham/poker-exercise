@@ -1,11 +1,15 @@
 $: << "./lib"
 
-require "game"
+require "holdem"
 
-game = Game.new
+game = Holdem.new(2)
 game.deal
-game.select_best_hands
+game.flop
+game.turn
+game.river
+game.judge
+puts '', ''
 game.players.each do |player|
-  print "#{player.name} has a #{player.hand.hand_name} (#{player.hand.cards.join(", ")})\n"
+  print "#{player.name} had a #{player.hand.hand_name} (#{player.hand.cards.join(", ")})\n"
 end
-print "\nThe winner is #{game.winner.name} with a #{game.winner.hand.hand_name}\n"
+#print "\nThe winner is #{game.winner.name} with a #{game.winner.hand.hand_name}\n"
