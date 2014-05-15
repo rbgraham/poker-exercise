@@ -17,7 +17,7 @@ class Deck
       end
     end
     
-    shuffle
+    3.times { shuffle }
   end
 
   def shuffle

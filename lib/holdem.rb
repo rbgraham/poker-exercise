@@ -1,8 +1,21 @@
 require 'ostruct'
 require 'deck'
+require 'player'
+require 'set'
 
 class Holdem
-  attr_accessor :players, :hands, :blind, :button, :current_players
+  attr_accessor :players, :hands, :blind, :button, :current_players, :pot, :current_bet, :stage, :folded, :community
+  
+  PREFLOP = 1
+  TURN = 2
+  RIVER = 3
+  FINAL = 4
+
+  # TODO side pots  
+  # TODO putting other ai players past all in results in a fold
+  # TODO hand success predictions, show possible hands
+  # TODO improved ai
+  # TODO handle winning a game and starting a new one, if desired
   
   def initialize(players, blind = 100)
     @deck = Deck.new
@@ -11,51 +24,74 @@ class Holdem
     raise "invalid number of players" if players < 2 or players > 8
 
     @players = (1..players).collect do |i|
-      OpenStruct.new(player: i, hand: nil, name: "AI Player #{i}", chips: 10000, bet: 0) 
+      Player.new("AI Player #{i}", true, 10000) 
     end
-    @players[0].name = 'You'
+    @players.push(Player.new("You", false, 10000))
     
     @button = 0
+    @stage = PREFLOP
+    @folded = []
+    @pot = 0
+    @community = Hand.new([])
   end
   
-  def you
-    @players[0]
+  def play
+    while true
+      puts "\nCtrl-C to leave the table."
+      
+      self.deal
+      self.flop
+      self.turn
+      self.river
+      self.judge
+    end
+  end
+  
+  def bets_equal?
+    puts "", "BETS", "#{@current_players.map(&:current_bet).join(', ')}", "#{Set.new(@current_players.map(&:current_bet)).to_a}", ""
+    Set.new(@current_players.map(&:current_bet)).to_a.count == 1
   end
   
   def bets
-    $stdout.print "Enter an amount to bet, enter to check, or [f]old: "
-    $stdout.flush
-    choice = $stdin.gets
-    puts choice
+    # order via the button
+    @current_bet = 0
+    @folded = []
     
-    if choice.start_with?('f')
-      puts "Folding..."
-      @current_players.delete(you)
-    elsif choice.nil?
-      puts "Checking..."
-      you.bet += @blind
-      puts "#{you.name} bets #{you.bet}."
-    else
-      bet = choice.to_i
-      puts "Betting..."
-      you.bet += bet
-      puts "#{you.name} bets #{you.bet}."
+    bet_loop
+    until self.bets_equal?
+      puts "", "Bets unequal...#{@current_players.map(&:current_bet).join(', ')}"
+      bet_loop
     end
-    
-    if @current_players.count == 1
-      return judge
-    end
-    
-    @players.slice(1,9).each do |player|
-      if you.bet > @blind
-        player.bet += you.bet
+
+    total_the_pot
+    clear_players_bets
+  end
+  
+  def bet_loop
+    @current_players.each do |player|
+      bet = player.decide(@stage == PREFLOP, @blind, @current_bet, pot_peek, @community)
+      if bet == Player::FOLD
+        @folded.push(player)
       else
-        player.bet += blind
+        @current_bet = bet
       end
-      puts "#{player.name} bets #{player.bet}."
     end
+    @current_players.delete_if {|p| @folded.include?(p) }
   end
     
+  def pot_peek
+    @pot + @players.map(&:current_bet).compact.inject(&:+)
+  end
+    
+  def total_the_pot
+    @pot += @players.map(&:current_bet).compact.inject(&:+)
+  end
+    
+  def clear_players_bets
+    @players.each do |player|
+      player.clear_bet
+    end
+  end
   
   def deal
     @deck.shuffle
@@ -63,7 +99,6 @@ class Holdem
     @players.each do |player|
       player.hand = @deck.deal(2, 1).first
     end
-    puts "You were dealt #{@players[0].hand.cards}.\n"
     
     if @button == (@players.count - 1)
       @button = 0
@@ -72,52 +107,67 @@ class Holdem
     end
     
     @current_players = @players.dup
+    @stage = PREFLOP
     bets
   end
   
   def flop
     cards = [@deck.draw, @deck.draw, @deck.draw]
-    puts "The flop comes out #{cards}."
-    @players.each do |player|
-      player.hand.cards += cards
-    end
+    @community.cards += cards
+    puts "", "The flop comes out #{cards}.", ""
+    @stage = TURN
+    bets
   end
   
   def turn
     card = @deck.draw
-    puts "The turn is #{card}."
-    @players.each do |player|
-      player.hand.cards += [card]
-    end
+    @community.cards += [card]
+    puts "", "The turn is #{card}.", ""
+    @stage = RIVER
+    bets
   end
   
   def river
     card = @deck.draw
-    puts "The river is #{card}."
-    @players.each do |player|
-      player.hand.cards += [card]
-    end
+    @community.cards += [card]
+    puts "", "The river is #{card}.", ""
+    @stage = FINAL
+    bets
   end
   
   def judge
-    winner = @current_players.max { |a, b| a.hand <=> b.hand }
     @players.each do |player|
-      player.chips -= player.bet
+      player.hand.cards += @community.cards
     end
-    winner.chips += @players.map(&:bet).inject(&:+)
-    puts "#{winner.name} -- #{winner.hand.hand_name}. Pot was #{@players.map(&:bet).inject(&:+)}.\n#{winner.name} -- #{winner.chips}."
+    winner = @current_players.max { |a, b| a.hand <=> b.hand }
+    winner.give_chips(@pot)
+    
+    puts "========================================================================================================="
+    puts "", "THE WINNER IS", "#{winner.name} -- #{winner.hand.hand_name}. Pot was #{@pot}.", ""
+    @players.each do |player|
+      puts "#{player.name} =>\t#{player.chips}."
+    end
+    puts "========================================================================================================="
     setup
   end
   
   def setup
     @deck.setup
-    @players.map {|p| p.bet = 0 }
+    @players.map {|p| p.clear_bet }
+    @folded = []
     
-    (0..@players.count-1).to_a.each do |i|
-      if @players[i].chips < @blind
-        p = @players.delete_at(i) 
-        puts "#{p.name} busted out."
+    busted = []
+    @players.each do |player|
+      if player.chips < @blind
+        busted.push(player) 
+        puts "#{player.name} busted out."
       end
     end
+    @players.delete_if {|p| busted.include?(p) }
+    
+    @stage = PREFLOP
+    @pot = 0
+    @community = Hand.new([])
+    # TODO rotate the players array and keep the "button" always on top
   end
 end

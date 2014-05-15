@@ -2,14 +2,11 @@ $: << "./lib"
 
 require "holdem"
 
-game = Holdem.new(2)
-game.deal
-game.flop
-game.turn
-game.river
-game.judge
-puts '', ''
-game.players.each do |player|
-  print "#{player.name} had a #{player.hand.hand_name} (#{player.hand.cards.join(", ")})\n"
-end
+$stdout.print "How many players? "
+$stdout.flush
+choice = $stdin.gets
+
+game = Holdem.new(choice.to_i)
+game.play
+
 #print "\nThe winner is #{game.winner.name} with a #{game.winner.hand.hand_name}\n"
